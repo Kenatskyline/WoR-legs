@@ -1,442 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WoR Roulette</title>
+
 <style>
-  body {
-    margin: 0;
-    background: #111;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
+body {
+  margin: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
 
-  h1 {
-    margin: 18px 0 8px;
-    font-size: 34px;
-    letter-spacing: 1px;
-  }
+h1 {
+  margin: 20px 0 5px;
+}
 
-  #sub {
-    margin-bottom: 10px;
-    color: #ccc;
-    font-size: 14px;
-  }
+.pointer {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid gold;
+  margin: 0 auto -10px;
+}
 
-  .wheel-wrap {
-    position: relative;
-    width: 90vw;
-    max-width: 700px;
-    margin: 0 auto;
-  }
+canvas {
+  display: block;
+  margin: auto;
+}
 
-  canvas {
-    display: block;
-    margin: 0 auto;
-    width: 100%;
-    height: auto;
-  }
+button {
+  margin: 15px;
+  padding: 12px 24px;
+  font-size: 18px;
+  border-radius: 10px;
+  border: none;
+  background: gold;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-  .pointer {
-    width: 0;
-    height: 0;
-    border-left: 22px solid transparent;
-    border-right: 22px solid transparent;
-    border-top: 0;
-    border-bottom: 38px solid gold;
-    margin: 0 auto -10px;
-    position: relative;
-    z-index: 10;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
-  }
-
-  .controls {
-    margin: 18px 0 10px;
-  }
-
-  button {
-    padding: 14px 26px;
-    font-size: 18px;
-    border-radius: 12px;
-    border: none;
-    background: gold;
-    color: black;
-    font-weight: bold;
-    cursor: pointer;
-    margin: 0 8px;
-  }
-
-  button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  #result {
-    font-size: 30px;
-    font-weight: bold;
-    margin: 18px 0 8px;
-    min-height: 40px;
-  }
-
-  #category {
-    font-size: 16px;
-    color: #ccc;
-    min-height: 24px;
-    margin-bottom: 18px;
-  }
-
-  #legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 16px;
-    max-width: 900px;
-    margin: 0 auto 28px;
-    padding: 0 12px;
-    font-size: 13px;
-    color: #ddd;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .swatch {
-    width: 14px;
-    height: 14px;
-    border-radius: 4px;
-    display: inline-block;
-  }
+#result {
+  font-size: 30px;
+  margin-top: 10px;
+}
 </style>
 </head>
+
 <body>
 
 <h1>WoR Roulette</h1>
-<div id="sub">Leg warm-up wheel • manual spin • F3 vibe</div>
-
 <div class="pointer"></div>
+<canvas id="wheel" width="700" height="700"></canvas>
 
-<div class="wheel-wrap">
-  <canvas id="wheel" width="700" height="700"></canvas>
-</div>
-
-<div class="controls">
-  <button id="spinBtn">SPIN</button>
-  <button id="resetBtn">RESET</button>
-</div>
+<button onclick="spin()">SPIN</button>
 
 <div id="result">Prime the engine.</div>
-<div id="category">Spin it and let the PAX get right.</div>
-
-<div id="legend">
-  <div class="legend-item"><span class="swatch" style="background:#2e7d32;"></span> Base</div>
-  <div class="legend-item"><span class="swatch" style="background:#c69300;"></span> Activation</div>
-  <div class="legend-item"><span class="swatch" style="background:#d66b00;"></span> Mobility</div>
-  <div class="legend-item"><span class="swatch" style="background:#b3261e;"></span> Spice</div>
-  <div class="legend-item"><span class="swatch" style="background:#000;"></span> Q Special</div>
-</div>
 
 <script>
 const slices = [
-  { label: "SSH", category: "Base", color: "#2e7d32" },
-  { label: "Imperial Walkers", category: "Base", color: "#2e7d32" },
-  { label: "Hillbillies", category: "Base", color: "#2e7d32" },
-  { label: "Toy Soldiers", category: "Base", color: "#2e7d32" },
-  { label: "Windmills", category: "Base", color: "#2e7d32" },
-  { label: "Calf Raises", category: "Base", color: "#2e7d32" },
+"SSH","Imperial Walkers","Hillbillies","Toy Soldiers","Windmills","Calf Raises",
+"Forward Lunges","Reverse Lunges","Squat + Reach","Lateral Lunges","Slow Air Squats",
+"Leg Swings F/B","Leg Swings S/S","Hip Circles","Ankle Rolls","World's Greatest Stretch","Groiners",
+"High Knees","Butt Kickers","Light Jump Squats","Broad Jump + Reset","Skaters","Fast Feet Chop",
+"Dealer's Choice","Hold Low Squat","Pulse Lunges","Tempo Squats","Mt Grizz Preview"
+];
 
-  { label: "Forward Lunges", category: "Activation", color: "#c69300" },
-  { label: "Reverse Lunges", category: "Activation", color: "#c69300" },
-  { label: "Squat + Reach", category: "Activation", color: "#c69300" },
-  { label: "Lateral Lunges", category: "Activation", color: "#c69300" },
-  { label: "Slow Air Squats", category: "Activation", color: "#c69300" },
-
-  { label: "Leg Swings F/B", category: "Mobility", color: "#d66b00" },
-  { label: "Leg Swings S/S", category: "Mobility", color: "#d66b00" },
-  { label: "Hip Circles", category: "Mobility", color: "#d66b00" },
-  { label: "Ankle Rolls", category: "Mobility", color: "#d66b00" },
-  { label: "World's Greatest Stretch", category: "Mobility", color: "#d66b00" },
-  { label: "Groiners", category: "Mobility", color: "#d66b00" },
-
-  { label: "High Knees", category: "Spice", color: "#b3261e" },
-  { label: "Butt Kickers", category: "Spice", color: "#b3261e" },
-  { label: "Light Jump Squats", category: "Spice", color: "#b3261e" },
-  { label: "Broad Jump + Reset", category: "Spice", color: "#b3261e" },
-  { label: "Skaters", category: "Spice", color: "#b3261e" },
-  { label: "Fast Feet Chop", category: "Spice", color: "#b3261e" },
-
-  { label: "Dealer's Choice", category: "Q Special", color: "#000000" },
-  { label: "Hold Low Squat", category: "Q Special", color: "#000000" },
-  { label: "Pulse Lunges", category: "Q Special", color: "#000000" },
-  { label: "Tempo Squats", category: "Q Special", color: "#000000" },
-  { label: "Mt Grizz Preview", category: "Q Special", color: "#000000" }
+const colors = [
+"#2e7d32","#2e7d32","#2e7d32","#2e7d32","#2e7d32","#2e7d32",
+"#c69300","#c69300","#c69300","#c69300","#c69300",
+"#d66b00","#d66b00","#d66b00","#d66b00","#d66b00","#d66b00",
+"#b3261e","#b3261e","#b3261e","#b3261e","#b3261e","#b3261e",
+"#000","#000","#000","#000","#000"
 ];
 
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
-const spinBtn = document.getElementById("spinBtn");
-const resetBtn = document.getElementById("resetBtn");
-const resultEl = document.getElementById("result");
-const categoryEl = document.getElementById("category");
-
-const W = canvas.width;
-const H = canvas.height;
-const CX = W / 2;
-const CY = H / 2;
-const RADIUS = 300;
-const INNER_RADIUS = 72;
-const arcSize = (Math.PI * 2) / slices.length;
 
 let rotation = 0;
 let spinning = false;
-let highlightedIndex = null;
-let lastTickIndex = null;
+let highlightIndex = null;
 
-function wrapAngle(angle) {
-  angle %= (Math.PI * 2);
-  if (angle < 0) angle += Math.PI * 2;
-  return angle;
-}
+const cx = 350;
+const cy = 350;
+const radius = 300;
+const arc = 2 * Math.PI / slices.length;
 
-function getPointerSliceIndex(rot) {
-  const pointerAngle = -Math.PI / 2;
-  const adjusted = wrapAngle(pointerAngle - rot);
-  return Math.floor(adjusted / arcSize) % slices.length;
-}
+// DRAW
+function draw(){
+  ctx.clearRect(0,0,700,700);
 
-function drawWheel() {
-  ctx.clearRect(0, 0, W, H);
+  for(let i=0;i<slices.length;i++){
+    const start = rotation + i * arc - Math.PI/2;
+    const end = start + arc;
 
-  for (let i = 0; i < slices.length; i++) {
-    const slice = slices[i];
-    const start = rotation + i * arcSize - Math.PI / 2;
-    const end = start + arcSize;
-
+    // slice
     ctx.beginPath();
-    ctx.moveTo(CX, CY);
-    ctx.arc(CX, CY, RADIUS, start, end);
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,radius,start,end);
     ctx.closePath();
-
-    ctx.fillStyle = slice.color;
+    ctx.fillStyle = colors[i];
     ctx.fill();
 
-    if (i === highlightedIndex) {
-      ctx.save();
-      ctx.globalAlpha = 0.32;
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-      ctx.restore();
-
-      ctx.beginPath();
-      ctx.moveTo(CX, CY);
-      ctx.arc(CX, CY, RADIUS, start, end);
-      ctx.closePath();
-      ctx.lineWidth = 6;
+    // highlight
+    if(i === highlightIndex){
       ctx.strokeStyle = "gold";
-      ctx.stroke();
-    } else {
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(255,255,255,0.13)";
+      ctx.lineWidth = 5;
       ctx.stroke();
     }
 
+    // TEXT (lengthwise)
     ctx.save();
-    ctx.translate(CX, CY);
-    ctx.rotate(start + arcSize / 2);
-
-    const textRadius = RADIUS * 0.64;
-    ctx.translate(textRadius, 0);
-    ctx.rotate(Math.PI / 2);
+    ctx.translate(cx,cy);
+    ctx.rotate(start + arc/2);
 
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font = "bold 16px Arial";
+    ctx.font = "bold 15px Arial";
 
-    drawWrappedLabel(slice.label, 0, 0, 110, 18);
+    // flip text if upside down
+    let angle = (start + arc/2) % (2*Math.PI);
+    if(angle > Math.PI/2 && angle < 3*Math.PI/2){
+      ctx.rotate(Math.PI);
+    }
+
+    ctx.fillText(slices[i], radius * 0.65, 0);
+
     ctx.restore();
   }
 
+  // center
   ctx.beginPath();
-  ctx.arc(CX, CY, INNER_RADIUS, 0, Math.PI * 2);
-  ctx.fillStyle = "#1a1a1a";
+  ctx.arc(cx,cy,70,0,Math.PI*2);
+  ctx.fillStyle="#222";
   ctx.fill();
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = "#444";
-  ctx.stroke();
 
-  ctx.fillStyle = "gold";
-  ctx.font = "bold 28px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("WoR", CX, CY - 12);
-
-  ctx.fillStyle = "#fff";
-  ctx.font = "bold 18px Arial";
-  ctx.fillText("ROULETTE", CX, CY + 18);
-
-  drawBall();
+  ctx.fillStyle="gold";
+  ctx.font="bold 24px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("WoR",cx,cy);
 }
 
-function drawWrappedLabel(text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  const lines = [];
-  let current = "";
-
-  for (let i = 0; i < words.length; i++) {
-    const test = current ? current + " " + words[i] : words[i];
-    if (ctx.measureText(test).width > maxWidth && current) {
-      lines.push(current);
-      current = words[i];
-    } else {
-      current = test;
-    }
-  }
-  if (current) lines.push(current);
-
-  const offset = ((lines.length - 1) * lineHeight) / 2;
-  for (let i = 0; i < lines.length; i++) {
-    ctx.fillText(lines[i], x, y - offset + i * lineHeight);
-  }
-}
-
-function drawBall() {
-  const trackRadius = RADIUS + 14;
-  const ballAngle = -Math.PI / 2;
-  const bx = CX + Math.cos(ballAngle) * trackRadius;
-  const by = CY + Math.sin(ballAngle) * trackRadius;
-
-  ctx.beginPath();
-  ctx.arc(bx, by, 10, 0, Math.PI * 2);
-  ctx.fillStyle = "#f3f3f3";
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#999";
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(bx - 2, by - 2, 3, 0, Math.PI * 2);
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.fill();
-}
-
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.95;
-  utterance.pitch = 1.0;
-  utterance.volume = 1.0;
-  window.speechSynthesis.speak(utterance);
-}
-
-let audioCtx = null;
-
-function ensureAudio() {
-  if (!audioCtx) {
+// 🔊 CLICK
+let audioCtx;
+function clickSound(){
+  if(!audioCtx){
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-  if (audioCtx.state === "suspended") {
-    audioCtx.resume();
-  }
-}
-
-function clickSound() {
-  if (!audioCtx) return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
 
-  osc.type = "square";
-  osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.025);
-
-  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.05, audioCtx.currentTime + 0.003);
-  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.035);
+  osc.frequency.value = 900;
+  gain.gain.value = 0.05;
 
   osc.connect(gain);
   gain.connect(audioCtx.destination);
 
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.04);
+  osc.stop(audioCtx.currentTime + 0.03);
 }
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
+// 🗣️ SPEAK
+function speak(text){
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.rate = 0.95;
+  speechSynthesis.speak(msg);
 }
 
-function spin() {
-  if (spinning) return;
+// 🎯 CORRECT WINNER (pointer based)
+function getWinnerIndex(){
+  const pointerAngle = -Math.PI/2;
+  let adjusted = (pointerAngle - rotation) % (2*Math.PI);
+  if(adjusted < 0) adjusted += 2*Math.PI;
 
-  ensureAudio();
+  return Math.floor(adjusted / arc);
+}
+
+// 🎰 SPIN
+function spin(){
+  if(spinning) return;
+
   spinning = true;
-  highlightedIndex = null;
-  lastTickIndex = null;
-  spinBtn.disabled = true;
-  resultEl.textContent = "Spinning...";
-  categoryEl.textContent = "Settle in, PAX.";
+  highlightIndex = null;
 
-  const startRotation = rotation;
-  const extraTurns = (7 + Math.random() * 2) * Math.PI * 2;
-  const randomOffset = Math.random() * Math.PI * 2;
-  const targetRotation = startRotation + extraTurns + randomOffset;
-  const duration = 5200 + Math.random() * 900;
-  const startTime = performance.now();
+  let spinTime = Math.random()*2000 + 3000;
+  let start = null;
+  let lastIndex = null;
 
-  function animate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    const eased = easeOutCubic(t);
+  function animate(t){
+    if(!start) start = t;
+    let progress = t - start;
 
-    rotation = startRotation + (targetRotation - startRotation) * eased;
+    rotation += 0.15;
 
-    const currentIndex = getPointerSliceIndex(rotation);
-    if (currentIndex !== lastTickIndex) {
+    let currentIndex = getWinnerIndex();
+    if(currentIndex !== lastIndex){
       clickSound();
-      lastTickIndex = currentIndex;
+      lastIndex = currentIndex;
     }
 
-    drawWheel();
+    draw();
 
-    if (t < 1) {
+    if(progress < spinTime){
       requestAnimationFrame(animate);
     } else {
       spinning = false;
-      spinBtn.disabled = false;
 
-      const winner = getPointerSliceIndex(rotation);
-      highlightedIndex = winner;
-      drawWheel();
+      let winner = getWinnerIndex();
+      highlightIndex = winner;
+      draw();
 
-      resultEl.textContent = slices[winner].label;
-      categoryEl.textContent = slices[winner].category;
-      speak(slices[winner].label);
+      document.getElementById("result").innerText = slices[winner];
+      speak(slices[winner]);
     }
   }
 
   requestAnimationFrame(animate);
 }
 
-function resetWheel() {
-  spinning = false;
-  rotation = 0;
-  highlightedIndex = null;
-  lastTickIndex = null;
-  spinBtn.disabled = false;
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
-  resultEl.textContent = "Prime the engine.";
-  categoryEl.textContent = "Spin it and let the PAX get right.";
-  drawWheel();
-}
-
-spinBtn.addEventListener("click", spin);
-resetBtn.addEventListener("click", resetWheel);
-
-drawWheel();
+draw();
 </script>
 
 </body>
