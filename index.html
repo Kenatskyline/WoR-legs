@@ -12,7 +12,7 @@
     body {
       margin: 0;
       background: #111;
-      color: white;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
     }
@@ -21,7 +21,7 @@
       width: 100%;
       max-width: 900px;
       margin: 0 auto;
-      padding: 16px 10px 30px;
+      padding: 16px 10px 32px;
     }
 
     h1 {
@@ -39,7 +39,6 @@
       width: min(94vw, 760px);
       margin: 0 auto;
       position: relative;
-      overflow: visible;
     }
 
     .pointer {
@@ -170,7 +169,7 @@
     const resultEl = document.getElementById("result");
     const categoryEl = document.getElementById("category");
 
-    const size = canvas.width;
+    const size = 760;
     const cx = size / 2;
     const cy = size / 2;
     const radius = 285;
@@ -191,11 +190,11 @@
 
     function getWinnerIndex() {
       const pointerAngle = -Math.PI / 2;
-      let adjusted = normalizeAngle(pointerAngle - rotation);
+      const adjusted = normalizeAngle(pointerAngle - rotation);
       return Math.floor(adjusted / arc) % slices.length;
     }
 
-    function wrapText(text, maxChars = 14) {
+    function splitLabel(text, maxChars = 14) {
       const words = text.split(" ");
       const lines = [];
       let current = "";
@@ -214,6 +213,39 @@
       return lines.slice(0, 2);
     }
 
+    function drawLabel(text, sliceMidAngle) {
+      const lines = splitLabel(text, 14);
+      const outwardRadius = radius * 0.69;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      const normalized = normalizeAngle(sliceMidAngle);
+      const onLeftSide = normalized > Math.PI / 2 && normalized < 3 * Math.PI / 2;
+
+      if (onLeftSide) {
+        ctx.rotate(sliceMidAngle + Math.PI);
+      } else {
+        ctx.rotate(sliceMidAngle);
+      }
+
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.font = "bold 12px Arial";
+
+      const x = onLeftSide ? -outwardRadius : outwardRadius;
+
+      if (lines.length === 1) {
+        ctx.fillText(lines[0], x, 0);
+      } else {
+        ctx.fillText(lines[0], x, -7);
+        ctx.fillText(lines[1], x, 7);
+      }
+
+      ctx.restore();
+    }
+
     function drawWheel() {
       ctx.clearRect(0, 0, size, size);
 
@@ -221,6 +253,7 @@
         const slice = slices[i];
         const start = rotation + i * arc - Math.PI / 2;
         const end = start + arc;
+        const mid = start + arc / 2;
 
         ctx.beginPath();
         ctx.moveTo(cx, cy);
@@ -249,31 +282,7 @@
           ctx.stroke();
         }
 
-        ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(start + arc / 2);
-
-        let midAngle = normalizeAngle(start + arc / 2);
-        if (midAngle > Math.PI / 2 && midAngle < 3 * Math.PI / 2) {
-          ctx.rotate(Math.PI);
-        }
-
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = "bold 12px Arial";
-
-        const textRadius = radius * 0.69;
-        const lines = wrapText(slice.label, 14);
-
-        if (lines.length === 1) {
-          ctx.fillText(lines[0], textRadius, 0);
-        } else {
-          ctx.fillText(lines[0], textRadius, -7);
-          ctx.fillText(lines[1], textRadius, 7);
-        }
-
-        ctx.restore();
+        drawLabel(slice.label, mid);
       }
 
       ctx.beginPath();
@@ -391,6 +400,7 @@
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
+
       rotation = 0;
       spinning = false;
       highlightIndex = null;
