@@ -1,228 +1,386 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WoR Roulette</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WoR Roulette</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
 
-<style>
-body {
-  margin: 0;
-  background: #111;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-}
+    h1 {
+      margin: 20px 0 6px;
+      font-size: 2.2rem;
+    }
 
-h1 {
-  margin: 20px 0 5px;
-}
+    .sub {
+      color: #ccc;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
 
-.pointer {
-  width: 0;
-  height: 0;
-  border-left: 20px solid transparent;
-  border-right: 20px solid transparent;
-  border-bottom: 35px solid gold;
-  margin: 0 auto -10px;
-}
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 35px solid gold;
+      margin: 0 auto -8px;
+      position: relative;
+      z-index: 5;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+    }
 
-canvas {
-  display: block;
-  margin: auto;
-}
+    canvas {
+      display: block;
+      margin: 0 auto;
+      width: min(92vw, 700px);
+      height: auto;
+    }
 
-button {
-  margin: 15px;
-  padding: 12px 24px;
-  font-size: 18px;
-  border-radius: 10px;
-  border: none;
-  background: gold;
-  font-weight: bold;
-  cursor: pointer;
-}
+    .controls {
+      margin-top: 8px;
+    }
 
-#result {
-  font-size: 30px;
-  margin-top: 10px;
-}
-</style>
+    button {
+      margin: 10px 8px;
+      padding: 12px 24px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: none;
+      background: gold;
+      color: #111;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #result {
+      font-size: 30px;
+      margin-top: 8px;
+      min-height: 40px;
+      font-weight: bold;
+    }
+
+    #category {
+      color: #ccc;
+      min-height: 24px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>WoR Roulette</h1>
-<div class="pointer"></div>
-<canvas id="wheel" width="700" height="700"></canvas>
+  <h1>WoR Roulette</h1>
+  <div class="sub">Leg warm-up wheel • manual spin • F3 vibe</div>
+  <div class="pointer"></div>
+  <canvas id="wheel" width="700" height="700"></canvas>
 
-<button onclick="spin()">SPIN</button>
+  <div class="controls">
+    <button id="spinBtn">SPIN</button>
+    <button id="resetBtn">RESET</button>
+  </div>
 
-<div id="result">Prime the engine.</div>
+  <div id="result">Prime the engine.</div>
+  <div id="category">Spin it and let the PAX get right.</div>
 
-<script>
-const slices = [
-"SSH","Imperial Walkers","Hillbillies","Toy Soldiers","Windmills","Calf Raises",
-"Forward Lunges","Reverse Lunges","Squat + Reach","Lateral Lunges","Slow Air Squats",
-"Leg Swings F/B","Leg Swings S/S","Hip Circles","Ankle Rolls","World's Greatest Stretch","Groiners",
-"High Knees","Butt Kickers","Light Jump Squats","Broad Jump + Reset","Skaters","Fast Feet Chop",
-"Dealer's Choice","Hold Low Squat","Pulse Lunges","Tempo Squats","Mt Grizz Preview"
-];
+  <script>
+    const slices = [
+      { label: "SSH", color: "#2e7d32", category: "Base" },
+      { label: "Imperial Walkers", color: "#2e7d32", category: "Base" },
+      { label: "Hillbillies", color: "#2e7d32", category: "Base" },
+      { label: "Toy Soldiers", color: "#2e7d32", category: "Base" },
+      { label: "Windmills", color: "#2e7d32", category: "Base" },
+      { label: "Calf Raises", color: "#2e7d32", category: "Base" },
 
-const colors = [
-"#2e7d32","#2e7d32","#2e7d32","#2e7d32","#2e7d32","#2e7d32",
-"#c69300","#c69300","#c69300","#c69300","#c69300",
-"#d66b00","#d66b00","#d66b00","#d66b00","#d66b00","#d66b00",
-"#b3261e","#b3261e","#b3261e","#b3261e","#b3261e","#b3261e",
-"#000","#000","#000","#000","#000"
-];
+      { label: "Forward Lunges", color: "#c69300", category: "Activation" },
+      { label: "Reverse Lunges", color: "#c69300", category: "Activation" },
+      { label: "Squat + Reach", color: "#c69300", category: "Activation" },
+      { label: "Lateral Lunges", color: "#c69300", category: "Activation" },
+      { label: "Slow Air Squats", color: "#c69300", category: "Activation" },
 
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+      { label: "Leg Swings F/B", color: "#d66b00", category: "Mobility" },
+      { label: "Leg Swings S/S", color: "#d66b00", category: "Mobility" },
+      { label: "Hip Circles", color: "#d66b00", category: "Mobility" },
+      { label: "Ankle Rolls", color: "#d66b00", category: "Mobility" },
+      { label: "World's Greatest Stretch", color: "#d66b00", category: "Mobility" },
+      { label: "Groiners", color: "#d66b00", category: "Mobility" },
 
-let rotation = 0;
-let spinning = false;
-let highlightIndex = null;
+      { label: "High Knees", color: "#b3261e", category: "Spice" },
+      { label: "Butt Kickers", color: "#b3261e", category: "Spice" },
+      { label: "Light Jump Squats", color: "#b3261e", category: "Spice" },
+      { label: "Broad Jump + Reset", color: "#b3261e", category: "Spice" },
+      { label: "Skaters", color: "#b3261e", category: "Spice" },
+      { label: "Fast Feet Chop", color: "#b3261e", category: "Spice" },
 
-const cx = 350;
-const cy = 350;
-const radius = 300;
-const arc = 2 * Math.PI / slices.length;
+      { label: "Dealer's Choice", color: "#000000", category: "Q Special" },
+      { label: "Hold Low Squat", color: "#000000", category: "Q Special" },
+      { label: "Pulse Lunges", color: "#000000", category: "Q Special" },
+      { label: "Tempo Squats", color: "#000000", category: "Q Special" },
+      { label: "Mt Grizz Preview", color: "#000000", category: "Q Special" }
+    ];
 
-// DRAW
-function draw(){
-  ctx.clearRect(0,0,700,700);
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
 
-  for(let i=0;i<slices.length;i++){
-    const start = rotation + i * arc - Math.PI/2;
-    const end = start + arc;
+    shuffle(slices);
 
-    // slice
-    ctx.beginPath();
-    ctx.moveTo(cx,cy);
-    ctx.arc(cx,cy,radius,start,end);
-    ctx.closePath();
-    ctx.fillStyle = colors[i];
-    ctx.fill();
+    const canvas = document.getElementById("wheel");
+    const ctx = canvas.getContext("2d");
+    const spinBtn = document.getElementById("spinBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const resultEl = document.getElementById("result");
+    const categoryEl = document.getElementById("category");
 
-    // highlight
-    if(i === highlightIndex){
-      ctx.strokeStyle = "gold";
-      ctx.lineWidth = 5;
+    const size = 700;
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = 300;
+    const innerRadius = 72;
+    const arc = (Math.PI * 2) / slices.length;
+
+    let rotation = 0;
+    let spinning = false;
+    let highlightIndex = null;
+    let lastTickIndex = null;
+    let audioCtx = null;
+
+    function normalizeAngle(angle) {
+      angle = angle % (Math.PI * 2);
+      if (angle < 0) angle += Math.PI * 2;
+      return angle;
+    }
+
+    function getWinnerIndex() {
+      const pointerAngle = -Math.PI / 2;
+      let adjusted = normalizeAngle(pointerAngle - rotation);
+      return Math.floor(adjusted / arc) % slices.length;
+    }
+
+    function wrapTextLines(text, maxChars = 14) {
+      const words = text.split(" ");
+      const lines = [];
+      let current = "";
+
+      for (const word of words) {
+        const test = current ? current + " " + word : word;
+        if (test.length > maxChars && current) {
+          lines.push(current);
+          current = word;
+        } else {
+          current = test;
+        }
+      }
+
+      if (current) lines.push(current);
+      return lines.slice(0, 2);
+    }
+
+    function drawWheel() {
+      ctx.clearRect(0, 0, size, size);
+
+      for (let i = 0; i < slices.length; i++) {
+        const slice = slices[i];
+        const start = rotation + i * arc - Math.PI / 2;
+        const end = start + arc;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, end);
+        ctx.closePath();
+        ctx.fillStyle = slice.color;
+        ctx.fill();
+
+        if (i === highlightIndex) {
+          ctx.save();
+          ctx.globalAlpha = 0.18;
+          ctx.fillStyle = "#fff";
+          ctx.fill();
+          ctx.restore();
+
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, radius, start, end);
+          ctx.closePath();
+          ctx.strokeStyle = "gold";
+          ctx.lineWidth = 5;
+          ctx.stroke();
+        } else {
+          ctx.strokeStyle = "rgba(0,0,0,0.18)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + arc / 2);
+
+        let midAngle = normalizeAngle(start + arc / 2);
+        if (midAngle > Math.PI / 2 && midAngle < 3 * Math.PI / 2) {
+          ctx.rotate(Math.PI);
+        }
+
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "bold 13px Arial";
+
+        const textRadius = radius * 0.67;
+        const lines = wrapTextLines(slice.label, 15);
+
+        if (lines.length === 1) {
+          ctx.fillText(lines[0], textRadius, 0);
+        } else {
+          ctx.fillText(lines[0], textRadius, -8);
+          ctx.fillText(lines[1], textRadius, 8);
+        }
+
+        ctx.restore();
+      }
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "#222";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#333";
       ctx.stroke();
+
+      ctx.fillStyle = "gold";
+      ctx.font = "bold 24px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("WoR", cx, cy);
     }
 
-    // TEXT (lengthwise)
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(start + arc/2);
-
-    ctx.fillStyle = "white";
-    ctx.textAlign = "center";
-    ctx.font = "bold 15px Arial";
-
-    // flip text if upside down
-    let angle = (start + arc/2) % (2*Math.PI);
-    if(angle > Math.PI/2 && angle < 3*Math.PI/2){
-      ctx.rotate(Math.PI);
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
     }
 
-    ctx.fillText(slices[i], radius * 0.65, 0);
+    function clickSound() {
+      if (!audioCtx) return;
 
-    ctx.restore();
-  }
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
 
-  // center
-  ctx.beginPath();
-  ctx.arc(cx,cy,70,0,Math.PI*2);
-  ctx.fillStyle="#222";
-  ctx.fill();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(1100, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(750, audioCtx.currentTime + 0.025);
 
-  ctx.fillStyle="gold";
-  ctx.font="bold 24px Arial";
-  ctx.textAlign="center";
-  ctx.fillText("WoR",cx,cy);
-}
+      gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.045, audioCtx.currentTime + 0.004);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.035);
 
-// 🔊 CLICK
-let audioCtx;
-function clickSound(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
 
-  osc.frequency.value = 900;
-  gain.gain.value = 0.05;
-
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.03);
-}
-
-// 🗣️ SPEAK
-function speak(text){
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.rate = 0.95;
-  speechSynthesis.speak(msg);
-}
-
-// 🎯 CORRECT WINNER (pointer based)
-function getWinnerIndex(){
-  const pointerAngle = -Math.PI/2;
-  let adjusted = (pointerAngle - rotation) % (2*Math.PI);
-  if(adjusted < 0) adjusted += 2*Math.PI;
-
-  return Math.floor(adjusted / arc);
-}
-
-// 🎰 SPIN
-function spin(){
-  if(spinning) return;
-
-  spinning = true;
-  highlightIndex = null;
-
-  let spinTime = Math.random()*2000 + 3000;
-  let start = null;
-  let lastIndex = null;
-
-  function animate(t){
-    if(!start) start = t;
-    let progress = t - start;
-
-    rotation += 0.15;
-
-    let currentIndex = getWinnerIndex();
-    if(currentIndex !== lastIndex){
-      clickSound();
-      lastIndex = currentIndex;
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.04);
     }
 
-    draw();
+    function speak(text) {
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      window.speechSynthesis.speak(utterance);
+    }
 
-    if(progress < spinTime){
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function spin() {
+      if (spinning) return;
+
+      ensureAudio();
+      spinning = true;
+      highlightIndex = null;
+      lastTickIndex = null;
+      spinBtn.disabled = true;
+      resultEl.textContent = "Spinning...";
+      categoryEl.textContent = "Settle in, PAX.";
+
+      const startRotation = rotation;
+      const extraTurns = (7 + Math.random() * 2) * Math.PI * 2;
+      const randomOffset = Math.random() * Math.PI * 2;
+      const targetRotation = startRotation + extraTurns + randomOffset;
+      const duration = 5200 + Math.random() * 900;
+      const startTime = performance.now();
+
+      function animate(now) {
+        const elapsed = now - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        const eased = easeOutCubic(t);
+
+        rotation = startRotation + (targetRotation - startRotation) * eased;
+
+        const currentIndex = getWinnerIndex();
+        if (currentIndex !== lastTickIndex) {
+          clickSound();
+          lastTickIndex = currentIndex;
+        }
+
+        drawWheel();
+
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          spinning = false;
+          spinBtn.disabled = false;
+
+          const winner = getWinnerIndex();
+          highlightIndex = winner;
+          drawWheel();
+
+          resultEl.textContent = slices[winner].label;
+          categoryEl.textContent = slices[winner].category;
+          speak(slices[winner].label);
+        }
+      }
+
       requestAnimationFrame(animate);
-    } else {
-      spinning = false;
-
-      let winner = getWinnerIndex();
-      highlightIndex = winner;
-      draw();
-
-      document.getElementById("result").innerText = slices[winner];
-      speak(slices[winner]);
     }
-  }
 
-  requestAnimationFrame(animate);
-}
+    function resetWheel() {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      rotation = 0;
+      spinning = false;
+      highlightIndex = null;
+      lastTickIndex = null;
+      spinBtn.disabled = false;
+      resultEl.textContent = "Prime the engine.";
+      categoryEl.textContent = "Spin it and let the PAX get right.";
+      drawWheel();
+    }
 
-draw();
-</script>
+    spinBtn.addEventListener("click", spin);
+    resetBtn.addEventListener("click", resetWheel);
 
+    drawWheel();
+  </script>
 </body>
 </html>
