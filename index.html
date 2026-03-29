@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>WoR Roulette</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       background: #111;
@@ -13,9 +17,16 @@
       text-align: center;
     }
 
+    .wrap {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px 10px 30px;
+    }
+
     h1 {
-      margin: 20px 0 6px;
-      font-size: 2.2rem;
+      margin: 6px 0 6px;
+      font-size: clamp(30px, 5vw, 44px);
     }
 
     .sub {
@@ -24,23 +35,30 @@
       margin-bottom: 8px;
     }
 
+    .wheel-wrap {
+      width: min(94vw, 760px);
+      margin: 0 auto;
+      position: relative;
+      overflow: visible;
+    }
+
     .pointer {
       width: 0;
       height: 0;
-      border-left: 20px solid transparent;
-      border-right: 20px solid transparent;
-      border-bottom: 35px solid gold;
-      margin: 0 auto -8px;
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-bottom: 30px solid gold;
+      margin: 0 auto -4px;
       position: relative;
       z-index: 5;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,.5));
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.45));
     }
 
     canvas {
       display: block;
-      margin: 0 auto;
-      width: min(92vw, 700px);
+      width: 100%;
       height: auto;
+      margin: 0 auto;
     }
 
     .controls {
@@ -48,8 +66,8 @@
     }
 
     button {
-      margin: 10px 8px;
-      padding: 12px 24px;
+      margin: 8px 6px;
+      padding: 12px 22px;
       font-size: 18px;
       border-radius: 10px;
       border: none;
@@ -65,34 +83,40 @@
     }
 
     #result {
-      font-size: 30px;
-      margin-top: 8px;
-      min-height: 40px;
+      font-size: clamp(28px, 4vw, 38px);
+      margin-top: 10px;
+      min-height: 42px;
       font-weight: bold;
+      padding: 0 8px;
     }
 
     #category {
       color: #ccc;
-      min-height: 24px;
-      margin-bottom: 20px;
+      min-height: 22px;
+      margin-bottom: 8px;
       font-size: 16px;
+      padding: 0 8px;
     }
   </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>WoR Roulette</h1>
+    <div class="sub">Leg warm-up wheel • manual spin • F3 vibe</div>
 
-  <h1>WoR Roulette</h1>
-  <div class="sub">Leg warm-up wheel • manual spin • F3 vibe</div>
-  <div class="pointer"></div>
-  <canvas id="wheel" width="700" height="700"></canvas>
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="760" height="760"></canvas>
+    </div>
 
-  <div class="controls">
-    <button id="spinBtn">SPIN</button>
-    <button id="resetBtn">RESET</button>
+    <div class="controls">
+      <button id="spinBtn">SPIN</button>
+      <button id="resetBtn">RESET</button>
+    </div>
+
+    <div id="result">Prime the engine.</div>
+    <div id="category">Spin it and let the PAX get right.</div>
   </div>
-
-  <div id="result">Prime the engine.</div>
-  <div id="category">Spin it and let the PAX get right.</div>
 
   <script>
     const slices = [
@@ -146,10 +170,10 @@
     const resultEl = document.getElementById("result");
     const categoryEl = document.getElementById("category");
 
-    const size = 700;
+    const size = canvas.width;
     const cx = size / 2;
     const cy = size / 2;
-    const radius = 300;
+    const radius = 285;
     const innerRadius = 72;
     const arc = (Math.PI * 2) / slices.length;
 
@@ -160,7 +184,7 @@
     let audioCtx = null;
 
     function normalizeAngle(angle) {
-      angle = angle % (Math.PI * 2);
+      angle %= Math.PI * 2;
       if (angle < 0) angle += Math.PI * 2;
       return angle;
     }
@@ -171,7 +195,7 @@
       return Math.floor(adjusted / arc) % slices.length;
     }
 
-    function wrapTextLines(text, maxChars = 14) {
+    function wrapText(text, maxChars = 14) {
       const words = text.split(" ");
       const lines = [];
       let current = "";
@@ -208,7 +232,7 @@
         if (i === highlightIndex) {
           ctx.save();
           ctx.globalAlpha = 0.18;
-          ctx.fillStyle = "#fff";
+          ctx.fillStyle = "#ffffff";
           ctx.fill();
           ctx.restore();
 
@@ -216,12 +240,12 @@
           ctx.moveTo(cx, cy);
           ctx.arc(cx, cy, radius, start, end);
           ctx.closePath();
-          ctx.strokeStyle = "gold";
           ctx.lineWidth = 5;
+          ctx.strokeStyle = "gold";
           ctx.stroke();
         } else {
-          ctx.strokeStyle = "rgba(0,0,0,0.18)";
           ctx.lineWidth = 1;
+          ctx.strokeStyle = "rgba(0,0,0,0.18)";
           ctx.stroke();
         }
 
@@ -237,16 +261,16 @@
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.font = "bold 13px Arial";
+        ctx.font = "bold 12px Arial";
 
-        const textRadius = radius * 0.67;
-        const lines = wrapTextLines(slice.label, 15);
+        const textRadius = radius * 0.69;
+        const lines = wrapText(slice.label, 14);
 
         if (lines.length === 1) {
           ctx.fillText(lines[0], textRadius, 0);
         } else {
-          ctx.fillText(lines[0], textRadius, -8);
-          ctx.fillText(lines[1], textRadius, 8);
+          ctx.fillText(lines[0], textRadius, -7);
+          ctx.fillText(lines[1], textRadius, 7);
         }
 
         ctx.restore();
